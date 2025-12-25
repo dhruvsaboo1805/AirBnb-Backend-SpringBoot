@@ -1,32 +1,43 @@
 package com.example.AirbnbBookingSpring.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-public class Airbnb {
+@Table(name = "airbnb")
+public class Airbnb extends BaseModel {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     private String description;
 
-    private String location;
+    @Column(nullable = false)
+    private String cityName; // i will figure it out about lat and long // todo
 
     @Column(nullable = false)
     private Long pricePerNight;
+
+    //Relationships
+
+    // Airbnb user
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    // Airbnb bookings
+    @OneToMany(mappedBy = "airbnb", cascade = CascadeType.ALL)
+    private List<Booking> bookings;
+
+    // Availability slots
+    @OneToMany(mappedBy = "airbnb", cascade = CascadeType.ALL)
+    private List<Availability> availabilityList;
 }

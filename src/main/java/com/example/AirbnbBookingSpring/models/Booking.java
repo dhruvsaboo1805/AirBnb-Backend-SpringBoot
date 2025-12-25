@@ -1,36 +1,21 @@
 package com.example.AirbnbBookingSpring.models;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-public class Booking {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Table(name = "booking")
+public class Booking extends BaseModel {
 
-    @Column(nullable = false)
-    private String userId;
-
-    @Column(nullable = false)
-    private String airbnbId;
+//    private String userId; // since we will be having user id as foreign key
+//    private String airbnbId;
 
     @Column(nullable = false)
     private String totalPrice;
-
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -40,9 +25,21 @@ public class Booking {
     @Column(unique = true)
     private String idempotencyKey;
 
-
+    // ENUMS
     public enum BookingStatus {
         PENDING, CONFIRMED, CANCELLED;
     }
+
+    // RelationsShips
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id" , nullable = false)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="airbnb_id",nullable = false)
+    private Airbnb airbnb;
+
+
 
 }

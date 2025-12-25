@@ -1,29 +1,30 @@
 package com.example.AirbnbBookingSpring.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-public class User {
+@Table(name = "user")
+public class User extends BaseModel {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     private String email;
 
-    private String password;
-    
+    private String password; // for dev mode its nullable true but for it will make nullable false //todo
+
+    // Relationships
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    List<Airbnb> airbnbList;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    List<Booking> bookingList;
+
 }
