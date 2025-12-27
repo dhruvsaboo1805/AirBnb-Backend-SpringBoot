@@ -3,6 +3,7 @@ package com.example.AirbnbBookingSpring.models;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "airbnb")
+@Data
 public class Airbnb extends BaseModel {
 
     @Column(nullable = false)
@@ -24,7 +26,7 @@ public class Airbnb extends BaseModel {
     private String cityName; // i will figure it out about lat and long // todo
 
     @Column(nullable = false)
-    private Long pricePerNight;
+    private double pricePerNight;
 
     //Relationships
 

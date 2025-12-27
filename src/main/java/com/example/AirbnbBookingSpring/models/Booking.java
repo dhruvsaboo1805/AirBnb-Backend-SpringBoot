@@ -2,6 +2,7 @@ package com.example.AirbnbBookingSpring.models;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -9,10 +10,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "booking")
+@Data
 public class Booking extends BaseModel {
 
-//    private String userId; // since we will be having user id as foreign key
-//    private String airbnbId;
+    @Column(name = "user_id", insertable = false, updatable = false)
+    private Long userId;
+
+    @Column(name = "airbnb_id", insertable = false, updatable = false)
+    private Long airbnbId;
 
     @Column(nullable = false)
     private String totalPrice;

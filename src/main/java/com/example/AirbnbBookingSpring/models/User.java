@@ -10,6 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "user")
+@Data
 public class User extends BaseModel {
 
     @Column(nullable = false)

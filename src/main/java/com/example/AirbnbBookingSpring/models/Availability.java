@@ -12,10 +12,11 @@ import org.springframework.data.domain.Auditable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "availability")
+@Data
 public class Availability extends BaseModel{
 
-//    @Column(nullable = false)
-//    private String airbnbId;
+    @Column(name = "airbnb_id", insertable = false, updatable = false)
+    private Long airbnbId;
 
     @Column(nullable = false)
     private String date;
