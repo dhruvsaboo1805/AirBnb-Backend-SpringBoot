@@ -2,7 +2,6 @@ package com.example.AirbnbBookingSpring.controllers;
 
 import com.example.AirbnbBookingSpring.dtos.AirbnbRequestDTO;
 import com.example.AirbnbBookingSpring.dtos.AirbnbResponseDTO;
-import com.example.AirbnbBookingSpring.dtos.UserResponseDTO;
 import com.example.AirbnbBookingSpring.services.AirbnbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

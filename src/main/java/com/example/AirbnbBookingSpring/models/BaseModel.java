@@ -10,10 +10,10 @@ import java.time.Instant;
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter
+@Setter
 public class BaseModel {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;

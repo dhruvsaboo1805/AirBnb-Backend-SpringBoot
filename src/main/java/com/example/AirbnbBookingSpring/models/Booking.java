@@ -1,16 +1,16 @@
 package com.example.AirbnbBookingSpring.models;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.time.LocalDate;
+
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "booking")
 @Data
+@Table(name = "booking")
 public class Booking extends BaseModel {
 
     @Column(name = "user_id", insertable = false, updatable = false)
@@ -20,7 +20,7 @@ public class Booking extends BaseModel {
     private Long airbnbId;
 
     @Column(nullable = false)
-    private String totalPrice;
+    private double totalPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -29,6 +29,10 @@ public class Booking extends BaseModel {
 
     @Column(unique = true)
     private String idempotencyKey;
+
+    private LocalDate checkInDate;
+
+    private LocalDate checkOutDate;
 
     // ENUMS
     public enum BookingStatus {

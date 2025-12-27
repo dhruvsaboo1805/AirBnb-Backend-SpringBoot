@@ -1,19 +1,17 @@
 package com.example.AirbnbBookingSpring.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "airbnb")
 @Data
+@Table(name = "airbnb")
 public class Airbnb extends BaseModel {
 
     @Column(nullable = false)

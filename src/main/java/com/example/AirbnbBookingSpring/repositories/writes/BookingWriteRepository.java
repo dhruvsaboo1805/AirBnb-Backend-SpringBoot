@@ -21,4 +21,5 @@ public interface BookingWriteRepository extends JpaRepository<Booking, Long> {
     // @Query("SELECT b FROM Booking b WHERE b.id = :id")
     // Optional<Booking> findByIdWithLock( @Param("id") Long id);
 
+    Optional<Booking> findByIdempotencyKey(String idempotencyKey);
 }

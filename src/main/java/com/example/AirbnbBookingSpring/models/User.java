@@ -5,12 +5,13 @@ import lombok.*;
 
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "user")
 @Data
+@Table(name = "user")
 public class User extends BaseModel {
 
     @Column(nullable = false)

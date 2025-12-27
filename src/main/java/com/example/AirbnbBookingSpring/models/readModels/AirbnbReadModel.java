@@ -22,7 +22,7 @@ public class AirbnbReadModel {
 
     private String location;
 
-    private Long pricePerNight;
+    private double pricePerNight;
 
     private List<AvailabilityReadModel> availability;
     

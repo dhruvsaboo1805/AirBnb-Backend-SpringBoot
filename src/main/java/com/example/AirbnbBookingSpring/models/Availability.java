@@ -1,18 +1,16 @@
 package com.example.AirbnbBookingSpring.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.domain.Auditable;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "availability")
 @Data
+@Table(name = "availability")
 public class Availability extends BaseModel{
 
     @Column(name = "airbnb_id", insertable = false, updatable = false)
