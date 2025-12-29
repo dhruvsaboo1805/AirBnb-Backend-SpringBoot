@@ -30,7 +30,7 @@ public class IdempotencyService implements IIdempotencyService {
 
         if(bookingReadModel != null) {
             Booking booking = Booking.builder()
-//                    .id(bookingReadModel.getId()) //todo check why id is not coming
+                    .id(bookingReadModel.getId())
                     .airbnbId(bookingReadModel.getAirbnbId())
                     .userId(bookingReadModel.getUserId())
                     .totalPrice(bookingReadModel.getTotalPrice())

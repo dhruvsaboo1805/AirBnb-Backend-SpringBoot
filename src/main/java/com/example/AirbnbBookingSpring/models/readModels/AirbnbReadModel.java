@@ -1,5 +1,6 @@
 package com.example.AirbnbBookingSpring.models.readModels;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -22,7 +23,7 @@ public class AirbnbReadModel {
 
     private String location;
 
-    private double pricePerNight;
+    private BigDecimal pricePerNight;
 
     private List<AvailabilityReadModel> availability;
     

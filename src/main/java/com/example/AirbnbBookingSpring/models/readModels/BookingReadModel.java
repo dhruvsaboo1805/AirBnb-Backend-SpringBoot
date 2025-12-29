@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -21,7 +22,7 @@ public class BookingReadModel {
 
     private Long userId;
 
-    private double totalPrice;
+    private BigDecimal totalPrice;
 
     private String bookingStatus;
 

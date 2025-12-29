@@ -15,7 +15,7 @@ import jakarta.persistence.LockModeType;
 @Repository
 public interface BookingWriteRepository extends JpaRepository<Booking, Long> {
     
-    List<Booking> findByAirbnbId(String airbnbId);
+    List<Booking> findByAirbnbId(Long airbnbId);
 
     // @Lock(LockModeType.PESSIMISTIC_WRITE)
     // @Query("SELECT b FROM Booking b WHERE b.id = :id")

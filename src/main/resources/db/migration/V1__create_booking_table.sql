@@ -4,7 +4,7 @@ CREATE TABLE booking (
          user_id BIGINT NOT NULL,
          airbnb_id BIGINT NOT NULL,
 
-         total_price VARCHAR(255) NOT NULL,
+         total_price DECIMAL(6 , 2) NOT NULL,
          booking_status VARCHAR(50) NOT NULL,
          idempotency_key VARCHAR(255) UNIQUE,
 

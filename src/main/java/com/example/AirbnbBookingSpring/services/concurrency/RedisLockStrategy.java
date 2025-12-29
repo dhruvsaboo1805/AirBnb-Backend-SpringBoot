@@ -18,10 +18,12 @@ import java.util.List;
 public class RedisLockStrategy implements ConcurrencyControlStrategy{
 
     @Value("${LOCK_TIME_OUT_DURATION}")
-    static Integer lockTimeOutDuration;
+    private Duration LOCK_TIMEOUT;
 
-    private static final String LOCK_KEY_PREFIX = "lock:availability:";
-    private static final Duration LOCK_TIMEOUT = Duration.ofMinutes(lockTimeOutDuration);
+    @Value("${LOCK_KEY_PREFIX}")
+    private String LOCK_KEY_PREFIX;
+
+    //private static final Duration LOCK_TIMEOUT = Duration.ofMinutes(lockTimeOutDuration);
     private final AvailabilityWriteRepository availabilityWriteRepository;
 
     private final RedisTemplate<String, String> redisTemplate;

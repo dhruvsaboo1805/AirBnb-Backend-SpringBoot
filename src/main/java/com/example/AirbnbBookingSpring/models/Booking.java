@@ -1,17 +1,23 @@
 package com.example.AirbnbBookingSpring.models;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Builder
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 @Table(name = "booking")
-public class Booking extends BaseModel {
+public class Booking extends BaseModel{
+
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    private long id;
 
     @Column(name = "user_id", insertable = false, updatable = false)
     private Long userId;
@@ -20,7 +26,7 @@ public class Booking extends BaseModel {
     private Long airbnbId;
 
     @Column(nullable = false)
-    private double totalPrice;
+    private BigDecimal totalPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

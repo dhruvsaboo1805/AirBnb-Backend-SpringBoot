@@ -4,7 +4,7 @@ CREATE TABLE airbnb (
         name VARCHAR(255),
         description TEXT,
         location VARCHAR(255),
-        price_per_night BIGINT NOT NULL,
+        price_per_night DECIMAL(6 , 2) NOT NULL,
 
         created_at TIMESTAMP NOT NULL,
         updated_at TIMESTAMP NOT NULL

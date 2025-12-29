@@ -2,11 +2,12 @@ package com.example.AirbnbBookingSpring.models;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.domain.Auditable;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Builder
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data

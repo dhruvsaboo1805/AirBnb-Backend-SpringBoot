@@ -2,12 +2,14 @@ package com.example.AirbnbBookingSpring.models;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Builder
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -24,7 +26,7 @@ public class Airbnb extends BaseModel {
     private String cityName; // i will figure it out about lat and long // todo
 
     @Column(nullable = false)
-    private double pricePerNight;
+    private BigDecimal pricePerNight;
 
     //Relationships
 
