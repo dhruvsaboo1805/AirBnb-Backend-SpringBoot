@@ -8,9 +8,9 @@ import com.example.AirbnbBookingSpring.models.readModels.AvailabilityReadModel;
 import com.example.AirbnbBookingSpring.models.readModels.BookingReadModel;
 
 import lombok.RequiredArgsConstructor;
-import tools.jackson.core.JacksonException;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +26,9 @@ public class RedisReadRepository {
     public static final String AIRBNB_KEY_PREFIX = "airbnb:";
     public static final String BOOKING_KEY_PREFIX = "booking:";
     public static final String AVAILABILITY_KEY_PREFIX = "availability:";
-    
+
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
-
 
     public AirbnbReadModel findAirbnbById(Long id) {
         String key = AIRBNB_KEY_PREFIX + id;
@@ -45,20 +44,20 @@ public class RedisReadRepository {
         } catch (JacksonException e) {
             throw new RuntimeException("Failed to parse Airbnb read model from Redis", e);
         }
-       
+
     }
 
     public List<AirbnbReadModel> findAllAirbnb() {
         Set<String> keys = redisTemplate.keys(AIRBNB_KEY_PREFIX + "*");
 
-        if(keys.isEmpty() || keys == null) {
+        if (keys.isEmpty() || keys == null) {
             return new ArrayList<>();
         }
 
         return keys.stream()
                 .map(key -> {
                     String value = redisTemplate.opsForValue().get(key);
-                    if(value == null) {
+                    if (value == null) {
                         return null;
                     }
                     try {
@@ -86,7 +85,7 @@ public class RedisReadRepository {
         } catch (JacksonException e) {
             throw new RuntimeException("Failed to parse Airbnb read model from Redis", e);
         }
-       
+
     }
 
     public AvailabilityReadModel findAvailabilityById(Long id) {
@@ -108,28 +107,28 @@ public class RedisReadRepository {
     public BookingReadModel findBookingByIdempotencyKey(String idempotencyKey) {
         Set<String> keys = redisTemplate.keys(BOOKING_KEY_PREFIX + "*");
 
-        if(keys.isEmpty() || keys == null) {
+        if (keys.isEmpty() || keys == null) {
             return null;
         }
 
         return keys.stream()
-            .map(key -> {
-                String value = redisTemplate.opsForValue().get(key);
-                if( value != null) {
-                    try {
-                        BookingReadModel bookingReadModel = objectMapper.readValue(value, BookingReadModel.class);
-                        if (idempotencyKey.equals(bookingReadModel.getIdempotencyKey())) {
-                            return bookingReadModel;
+                .map(key -> {
+                    String value = redisTemplate.opsForValue().get(key);
+                    if (value != null) {
+                        try {
+                            BookingReadModel bookingReadModel = objectMapper.readValue(value, BookingReadModel.class);
+                            if (idempotencyKey.equals(bookingReadModel.getIdempotencyKey())) {
+                                return bookingReadModel;
+                            }
+                        } catch (JacksonException e) {
+                            throw new RuntimeException("Failed to parse Booking read model from Redis", e);
                         }
-                    } catch (JacksonException e) {
-                        throw new RuntimeException("Failed to parse Booking read model from Redis", e);
                     }
-                }
-                return null;
-            })
-            .filter(booking -> booking != null)
-            .findFirst()
-            .orElse(null);
+                    return null;
+                })
+                .filter(booking -> booking != null)
+                .findFirst()
+                .orElse(null);
     }
 
 }

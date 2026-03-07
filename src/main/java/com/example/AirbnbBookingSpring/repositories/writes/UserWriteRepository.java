@@ -11,5 +11,6 @@ import com.example.AirbnbBookingSpring.models.User;
 public interface UserWriteRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
+    Optional<User> findById(Long id);
     
 }

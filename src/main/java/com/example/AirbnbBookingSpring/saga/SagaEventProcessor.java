@@ -20,6 +20,7 @@ public class SagaEventProcessor {
                 // no action
                 break;
             case "BOOKING_CONFIRM_REQUESTED":
+                availabilityEventHandler.handleBookingConfirmed(sagaEvent);
                 bookingEventHandler.handleBookingConfirmRequested(sagaEvent);
                 break;
             case "BOOKING_CONFIRMED":

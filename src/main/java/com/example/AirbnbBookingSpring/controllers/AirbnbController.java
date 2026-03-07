@@ -17,9 +17,9 @@ public class AirbnbController {
 
     private final AirbnbService airbnbService;
 
-    @PostMapping
-    public ResponseEntity<AirbnbResponseDTO> createAirbnb(@RequestBody AirbnbRequestDTO createDTO) {
-        AirbnbResponseDTO userCreated = airbnbService.createAirbnb(createDTO);
+    @PostMapping("/{user_id}")
+    public ResponseEntity<AirbnbResponseDTO> createAirbnb(@RequestBody AirbnbRequestDTO createDTO , @PathVariable Long user_id) {
+        AirbnbResponseDTO userCreated = airbnbService.createAirbnb(createDTO , user_id);
         return new ResponseEntity<>(userCreated, HttpStatus.CREATED);
     }
 

@@ -11,20 +11,18 @@ import java.util.Map;
 
 public class DotenvInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
-    @Override
-    public void initialize(ConfigurableApplicationContext applicationContext) {
-        Dotenv dotenv = Dotenv.configure()
-                .ignoreIfMissing()
-                .load();
+        @Override
+        public void initialize(ConfigurableApplicationContext applicationContext) {
+                Dotenv dotenv = Dotenv.configure()
+                                .ignoreIfMissing()
+                                .load();
 
-        ConfigurableEnvironment environment = applicationContext.getEnvironment();
+                ConfigurableEnvironment environment = applicationContext.getEnvironment();
 
-        Map<String, Object> dotenvMap = new HashMap<>();
-        dotenv.entries().forEach(entry ->
-                dotenvMap.put(entry.getKey(), entry.getValue())
-        );
+                Map<String, Object> dotenvMap = new HashMap<>();
+                dotenv.entries().forEach(entry -> dotenvMap.put(entry.getKey(), entry.getValue()));
 
-        environment.getPropertySources()
-                .addFirst(new MapPropertySource("dotenvProperties", dotenvMap));
-    }
+                environment.getPropertySources()
+                                .addFirst(new MapPropertySource("dotenvProperties", dotenvMap));
+        }
 }

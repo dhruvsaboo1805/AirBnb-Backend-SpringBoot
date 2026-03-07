@@ -3,7 +3,7 @@ package com.example.AirbnbBookingSpring.models;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.domain.Auditable;
+import java.time.LocalDate;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
@@ -12,14 +12,14 @@ import org.springframework.data.domain.Auditable;
 @NoArgsConstructor
 @Data
 @Table(name = "availability")
-public class Availability extends BaseModel{
+public class Availability extends BaseModel {
 
     @Column(name = "airbnb_id", insertable = false, updatable = false)
     private Long airbnbId;
 
     @Column(nullable = false)
-    private String date;
-    
+    private LocalDate date;
+
     private Long bookingId; // null if available
 
     // RelationShips
@@ -29,8 +29,8 @@ public class Availability extends BaseModel{
     @JoinColumn(name = "airbnb_id", nullable = false)
     private Airbnb airbnb;
 
-//    // Optional booking
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "booking_id")
-//    private Booking booking;
+    // // Optional booking
+    // @OneToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "booking_id")
+    // private Booking booking;
 }

@@ -3,9 +3,11 @@ package com.example.AirbnbBookingSpring.repositories.writes;
 import java.time.LocalDate;
 import java.util.List;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.AirbnbBookingSpring.models.Availability;
@@ -25,9 +27,26 @@ public interface AvailabilityWriteRepository extends JpaRepository<Availability,
     Long countByAirbnbIdAndDateBetweenAndBookingIdIsNotNull(Long airbnbId, LocalDate startDate, LocalDate endDate);
 
     // UPDATE availability SET booking_id = bookingId where airbnb_id = airbnbId and date BETWEEN startDate AND endDate;
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)  // ✅
+    @Transactional
     @Query("UPDATE Availability a SET a.bookingId = :bookingId WHERE a.airbnbId = :airbnbId AND a.date BETWEEN :startDate AND :endDate")
-    void updateBookingIdByAirbnbIdAndDateBetween(Long bookingId, Long airbnbId, LocalDate startDate, LocalDate endDate);
+    int updateBookingIdByAirbnbIdAndDateBetween(
+            @Param("bookingId") Long bookingId,
+            @Param("airbnbId") Long airbnbId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("SELECT COUNT(a) FROM Availability a WHERE a.airbnb.id = :airbnbId " +
+            "AND a.date BETWEEN :checkInDate AND :checkOutDate " +
+            "AND a.bookingId IS NOT NULL " +
+            "AND a.bookingId != :bookingId")
+    Long countBookedSlotsExcludingBooking(
+            @Param("airbnbId") Long airbnbId,
+            @Param("checkInDate") LocalDate checkInDate,
+            @Param("checkOutDate") LocalDate checkOutDate,
+            @Param("bookingId") Long bookingId
+    );
 
     // for pesimistic locking
 

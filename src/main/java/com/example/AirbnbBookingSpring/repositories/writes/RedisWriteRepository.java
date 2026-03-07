@@ -4,10 +4,10 @@ import com.example.AirbnbBookingSpring.models.Booking;
 import com.example.AirbnbBookingSpring.models.readModels.BookingReadModel;
 import com.example.AirbnbBookingSpring.repositories.reads.RedisReadRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
-import tools.jackson.databind.ObjectMapper;
 
 @Repository
 @RequiredArgsConstructor
@@ -19,8 +19,8 @@ public class RedisWriteRepository {
     public void writeBookingReadModel(Booking booking) {
         BookingReadModel bookingReadModel = BookingReadModel.builder()
                 .id(booking.getId())
-                .airbnbId(booking.getAirbnbId())
-                .userId(booking.getUserId())
+                .airbnbId(booking.getAirbnb().getId())
+                .userId(booking.getUser().getId())
                 .totalPrice(booking.getTotalPrice())
                 .bookingStatus(booking.getBookingStatus().name())
                 .idempotencyKey(booking.getIdempotencyKey())
@@ -33,7 +33,11 @@ public class RedisWriteRepository {
 
     private void saveBookingReadModel(BookingReadModel bookingReadModel) {
         String key = RedisReadRepository.BOOKING_KEY_PREFIX + bookingReadModel.getId();
-        String value = objectMapper.writeValueAsString(bookingReadModel);
-        redisTemplate.opsForValue().set(key, value);
+        try {
+            String value = objectMapper.writeValueAsString(bookingReadModel);
+            redisTemplate.opsForValue().set(key, value);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize booking read model", e);
+        }
     }
 }

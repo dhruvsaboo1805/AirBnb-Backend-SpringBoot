@@ -15,16 +15,6 @@ import java.time.LocalDate;
 @Table(name = "booking")
 public class Booking extends BaseModel{
 
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private long id;
-
-    @Column(name = "user_id", insertable = false, updatable = false)
-    private Long userId;
-
-    @Column(name = "airbnb_id", insertable = false, updatable = false)
-    private Long airbnbId;
-
     @Column(nullable = false)
     private BigDecimal totalPrice;
 
@@ -46,7 +36,6 @@ public class Booking extends BaseModel{
     }
 
     // RelationsShips
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id" , nullable = false)
     private User user;

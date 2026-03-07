@@ -32,7 +32,7 @@ public class Airbnb extends BaseModel {
 
     // Airbnb user
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id" , nullable = false)
     private User user;
 
     // Airbnb bookings
