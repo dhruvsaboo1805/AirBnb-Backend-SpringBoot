@@ -79,3 +79,4 @@ jobs:
         with:
           name: test-reports
           path: build/reports/tests/
+          if-no-files-found: ignore
