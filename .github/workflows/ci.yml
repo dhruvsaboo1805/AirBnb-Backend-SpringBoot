@@ -80,3 +80,20 @@ jobs:
           name: test-reports
           path: build/reports/tests/
           if-no-files-found: ignore
+
+      - name: Print build summary
+        if: always()
+        run: |
+          echo "========================================="
+          echo "Branch   : ${{ github.ref }}"
+          echo "Actor    : ${{ github.actor }}"
+          echo "Commit   : ${{ github.sha }}"
+          echo "Message  : ${{ github.event.head_commit.message }}"
+          echo "Status   : ${{ job.status }}"
+          echo "========================================="
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Build FAILED on branch ${{ github.ref }}"
+          echo "::error::Triggered by ${{ github.actor }} - ${{ github.event.head_commit.message }}"
