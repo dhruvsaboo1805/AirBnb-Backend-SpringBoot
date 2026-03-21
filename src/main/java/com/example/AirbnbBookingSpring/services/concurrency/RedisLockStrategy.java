@@ -34,45 +34,38 @@ public class RedisLockStrategy implements ConcurrencyControlStrategy {
         redisTemplate.delete(lockKey);
         log.info("[releaseLock] Lock released - key={}", lockKey);
     }
-
+    
     @Override
-    public List<Availability> lockAndCheckAvailability(Long airbnbId, LocalDate checkInDate, LocalDate checkOutDate, Long userId) {
-        log.info("[lockAndCheckAvailability] START - airbnbId={}, checkIn={}, checkOut={}, userId={}",
-                airbnbId, checkInDate, checkOutDate, userId);
+    public List<Availability> lockAndCheckAvailability(
+            Long airbnbId, LocalDate checkInDate, LocalDate checkOutDate, String customerEmail) {
+
+        log.info("[lockAndCheckAvailability] START - airbnbId={}, checkIn={}, checkOut={}, customerEmail={}",
+                airbnbId, checkInDate, checkOutDate, customerEmail);
 
         Long bookedSlots = availabilityWriteRepository
                 .countByAirbnbIdAndDateBetweenAndBookingIdIsNotNull(airbnbId, checkInDate, checkOutDate);
 
-        log.debug("[lockAndCheckAvailability] Booked slots count={} for airbnbId={}", bookedSlots, airbnbId);
-
         if (bookedSlots > 0) {
-            log.warn("[lockAndCheckAvailability] Dates unavailable - airbnbId={}, checkIn={}, checkOut={}, bookedSlots={}",
-                    airbnbId, checkInDate, checkOutDate, bookedSlots);
-            throw new BookingException("Airbnb is not available for the given dates. Please try different dates.");
+            log.warn("[lockAndCheckAvailability] Dates unavailable - airbnbId={}", airbnbId);
+            throw new BookingException("Airbnb is not available for the given dates.");
         }
 
         String lockKey = generateLockKey(airbnbId, checkInDate, checkOutDate);
-        log.debug("[lockAndCheckAvailability] Attempting to acquire lock - key={}", lockKey);
 
         boolean locked = Boolean.TRUE.equals(
-                redisTemplate.opsForValue().setIfAbsent(lockKey, userId.toString(), LOCK_TIMEOUT)
+                redisTemplate.opsForValue().setIfAbsent(lockKey, customerEmail, LOCK_TIMEOUT)
         );
 
         if (!locked) {
-            log.warn("[lockAndCheckAvailability] Failed to acquire lock - key={}, another request is in progress", lockKey);
-            throw new IllegalStateException("Failed to acquire booking for the given dates. Please try again.");
+            log.warn("[lockAndCheckAvailability] Failed to acquire lock - key={}", lockKey);
+            throw new IllegalStateException("Failed to acquire booking. Please try again.");
         }
 
-        log.info("[lockAndCheckAvailability] Lock acquired - key={}, ttl={}", lockKey, LOCK_TIMEOUT);
+        log.info("[lockAndCheckAvailability] Lock acquired - key={}", lockKey);
 
         try {
-            List<Availability> availabilityList = availabilityWriteRepository
-                    .findByAirbnbIdAndDateBetween(airbnbId, checkInDate, checkOutDate);
-            log.debug("[lockAndCheckAvailability] Found {} available slots", availabilityList.size());
-            return availabilityList;
+            return availabilityWriteRepository.findByAirbnbIdAndDateBetween(airbnbId, checkInDate, checkOutDate);
         } catch (Exception e) {
-            log.error("[lockAndCheckAvailability] Error fetching availability, releasing lock - key={}, error={}",
-                    lockKey, e.getMessage());
             releaseLock(airbnbId, checkInDate, checkOutDate);
             throw e;
         }

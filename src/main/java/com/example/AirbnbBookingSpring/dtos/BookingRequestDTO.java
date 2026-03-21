@@ -19,6 +19,6 @@ public class BookingRequestDTO {
     @NotNull(message = "Check-out date is required")
     private LocalDate checkOutDate;
 
-    @NotNull(message = "User ID is required")
-    private Long userId;
+    @NotNull(message = "Email is required")
+    private String email;
 }

@@ -3,7 +3,9 @@ package com.example.AirbnbBookingSpring.controllers;
 import com.example.AirbnbBookingSpring.dtos.AirbnbRequestDTO;
 import com.example.AirbnbBookingSpring.dtos.AirbnbResponseDTO;
 import com.example.AirbnbBookingSpring.services.AirbnbService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,14 +15,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/airbnb")
 @RequiredArgsConstructor
+@Slf4j
 public class AirbnbController {
 
     private final AirbnbService airbnbService;
 
-    @PostMapping("/{user_id}")
-    public ResponseEntity<AirbnbResponseDTO> createAirbnb(@RequestBody AirbnbRequestDTO createDTO , @PathVariable Long user_id) {
-        AirbnbResponseDTO userCreated = airbnbService.createAirbnb(createDTO , user_id);
-        return new ResponseEntity<>(userCreated, HttpStatus.CREATED);
+    @PostMapping
+    public ResponseEntity<AirbnbResponseDTO> createAirbnb(
+            @RequestBody AirbnbRequestDTO createDTO,
+            HttpServletRequest request) {
+        String ownerEmail = (String) request.getAttribute("email");
+        log.info("[AirbnbController] createAirbnb - ownerEmail={}", ownerEmail);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(airbnbService.createAirbnb(createDTO, ownerEmail));
     }
 
     @GetMapping("/{id}")
@@ -32,15 +39,14 @@ public class AirbnbController {
 
     @GetMapping
     public ResponseEntity<List<AirbnbResponseDTO>> getAllAirbnbs() {
-        List<AirbnbResponseDTO> airbnbs = airbnbService.getAllAirbnb();
-        return ResponseEntity.ok(airbnbs);
+        return ResponseEntity.ok(airbnbService.getAllAirbnb());
     }
 
-    @PutMapping("/update")
+    @PutMapping("/{id}")
     public ResponseEntity<AirbnbResponseDTO> updateAirbnb(
+            @PathVariable Long id,
             @RequestBody AirbnbRequestDTO updateDTO) {
-        AirbnbResponseDTO updateAirbnb = airbnbService.updateAirbnb(updateDTO);
-        return ResponseEntity.ok(updateAirbnb);
+        return ResponseEntity.ok(airbnbService.updateAirbnb(updateDTO));
     }
 
     @DeleteMapping("/{id}")

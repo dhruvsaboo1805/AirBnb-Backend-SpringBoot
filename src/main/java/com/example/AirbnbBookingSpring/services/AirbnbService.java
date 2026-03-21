@@ -2,14 +2,11 @@ package com.example.AirbnbBookingSpring.services;
 
 import com.example.AirbnbBookingSpring.dtos.AirbnbRequestDTO;
 import com.example.AirbnbBookingSpring.dtos.AirbnbResponseDTO;
-import com.example.AirbnbBookingSpring.exceptions.BookingException;
 import com.example.AirbnbBookingSpring.mappers.AirbnbMapper;
 import com.example.AirbnbBookingSpring.models.Airbnb;
 import com.example.AirbnbBookingSpring.models.Availability;
-import com.example.AirbnbBookingSpring.models.User;
 import com.example.AirbnbBookingSpring.repositories.writes.AirbnbWriteRepository;
 import com.example.AirbnbBookingSpring.repositories.writes.AvailabilityWriteRepository;
-import com.example.AirbnbBookingSpring.repositories.writes.UserWriteRepository;
 import com.example.AirbnbBookingSpring.services.ImplInterfaces.IAirbnbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,29 +24,23 @@ import java.util.stream.Collectors;
 public class AirbnbService implements IAirbnbService {
 
     private final AirbnbWriteRepository airbnbWriteRepository;
-    private final UserWriteRepository userWriteRepository;
     private final AvailabilityWriteRepository availabilityWriteRepository;
 
     @Override
-    public AirbnbResponseDTO createAirbnb(AirbnbRequestDTO airbnbRequestDTO, Long userId) {
-        log.info("[createAirbnb] START - userId={}, name={}, city={}",
-                userId, airbnbRequestDTO.getName(), airbnbRequestDTO.getCityName());
-
-        User user = userWriteRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.error("[createAirbnb] User not found - id={}", userId);
-                    return new RuntimeException("User not found with id: " + userId);
-                });
+    public AirbnbResponseDTO createAirbnb(AirbnbRequestDTO airbnbRequestDTO , String ownerEmail) {
+        log.info("[createAirbnb] START - ownerEmail={}, name={}, city={}",
+                ownerEmail, airbnbRequestDTO.getName(), airbnbRequestDTO.getCityName());
 
         Airbnb airbnb = AirbnbMapper.toEntity(airbnbRequestDTO);
-        airbnb.setUser(user);
+        airbnb.setOwnerEmail(ownerEmail);
 
         airbnbWriteRepository.save(airbnb);
         log.info("[createAirbnb] Airbnb saved to DB - airbnbId={}", airbnb.getId());
 
         seedAvailability(airbnb);
 
-        log.info("[createAirbnb] END - airbnbId={} created successfully", airbnb.getId());
+        log.info("[createAirbnb] END - airbnbId={} created successfully for ownerEmail={}",
+                airbnb.getId(), ownerEmail);
         return AirbnbMapper.toDTO(airbnb);
     }
 

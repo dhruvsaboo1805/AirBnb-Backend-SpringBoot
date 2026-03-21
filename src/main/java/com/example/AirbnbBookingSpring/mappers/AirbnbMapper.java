@@ -21,6 +21,7 @@ public class AirbnbMapper {
                 .description(airbnb.getDescription())
                 .cityName(airbnb.getCityName())
                 .pricePerNight(airbnb.getPricePerNight())
+                .ownerEmail(airbnb.getOwnerEmail())
                 .build();
     }
 

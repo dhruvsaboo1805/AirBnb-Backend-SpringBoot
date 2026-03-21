@@ -10,7 +10,7 @@ public interface ConcurrencyControlStrategy {
 
     void releaseLock(Long airbnbId, LocalDate checkInDate, LocalDate checkOutDate);
 
-    List<Availability>lockAndCheckAvailability(Long airbnbId, LocalDate checkInDate, LocalDate checkOutDate , Long userId);
+    List<Availability>lockAndCheckAvailability(Long airbnbId, LocalDate checkInDate, LocalDate checkOutDate , String customerEmail);
 }
 
 // i have also implemented pesimistic locking its commented in availabilitywriterepo

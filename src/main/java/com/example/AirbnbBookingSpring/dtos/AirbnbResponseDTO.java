@@ -17,5 +17,6 @@ public class AirbnbResponseDTO {
     private String description;
     private BigDecimal pricePerNight;
     private String cityName;
+    private String ownerEmail;
 
 }

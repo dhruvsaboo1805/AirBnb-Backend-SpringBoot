@@ -30,15 +30,15 @@ public class Booking extends BaseModel{
 
     private LocalDate checkOutDate;
 
+    @Column(nullable = false)
+    private String customerEmail;
+
     // ENUMS
     public enum BookingStatus {
         PENDING, CONFIRMED, CANCELLED;
     }
 
     // RelationsShips
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id" , nullable = false)
-    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="airbnb_id",nullable = false)

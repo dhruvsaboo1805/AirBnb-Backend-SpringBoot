@@ -7,6 +7,7 @@ import com.example.AirbnbBookingSpring.dtos.UpdateBookingResponseDTO;
 import com.example.AirbnbBookingSpring.models.Booking;
 import com.example.AirbnbBookingSpring.services.BookingService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,13 +23,21 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    public ResponseEntity<BookingResponseDTO> createBooking(@RequestBody BookingRequestDTO bookingRequestDTO) throws JsonProcessingException {
+    public ResponseEntity<BookingResponseDTO> createBooking(
+            @RequestBody BookingRequestDTO bookingRequestDTO,
+            HttpServletRequest request) throws JsonProcessingException {
+
+        String customerEmail = (String) request.getAttribute("email");
+        bookingRequestDTO.setEmail(customerEmail);
+
+        log.info("[BookingController] createBooking - customerEmail={}", customerEmail);
         Booking booking = bookingService.createBooking(bookingRequestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(BookingResponseDTO.fromBooking(booking));
     }
 
     @PatchMapping
-    public ResponseEntity<UpdateBookingResponseDTO> updateBooking(@RequestBody UpdateBookingRequestDTO updateBookingRequestDTO) {
+    public ResponseEntity<UpdateBookingResponseDTO> updateBooking(
+            @RequestBody UpdateBookingRequestDTO updateBookingRequestDTO) {
         Booking booking = bookingService.updateBooking(updateBookingRequestDTO);
         return ResponseEntity.ok(UpdateBookingResponseDTO.fromBooking(booking));
     }

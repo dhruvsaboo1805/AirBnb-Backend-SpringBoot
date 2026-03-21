@@ -20,7 +20,7 @@ public class BookingReadModel {
 
     private Long airbnbId;
 
-    private Long userId;
+    private String customerEmail;
 
     private BigDecimal totalPrice;
 

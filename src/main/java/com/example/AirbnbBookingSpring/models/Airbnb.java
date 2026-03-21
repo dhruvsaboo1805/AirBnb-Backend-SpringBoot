@@ -28,12 +28,10 @@ public class Airbnb extends BaseModel {
     @Column(nullable = false)
     private BigDecimal pricePerNight;
 
-    //Relationships
+    @Column(nullable = false)
+    private String ownerEmail;
 
-    // Airbnb user
-    @ManyToOne
-    @JoinColumn(name = "user_id" , nullable = false)
-    private User user;
+    //Relationships
 
     // Airbnb bookings
     @OneToMany(mappedBy = "airbnb", cascade = CascadeType.ALL)

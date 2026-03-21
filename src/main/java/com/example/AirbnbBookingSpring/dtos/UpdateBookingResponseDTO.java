@@ -18,7 +18,7 @@ public class UpdateBookingResponseDTO {
 
     private Long id;
     private Long airbnbId;
-    private Long userId;
+    private String customerEmail;
     private BigDecimal totalPrice;
     private Booking.BookingStatus bookingStatus;
     private String idempotencyKey;
@@ -30,7 +30,7 @@ public class UpdateBookingResponseDTO {
         return UpdateBookingResponseDTO.builder()
                 .id(booking.getId())
                 .airbnbId(booking.getAirbnb().getId())
-                .userId(booking.getUser().getId())
+                .customerEmail(booking.getCustomerEmail())
                 .totalPrice(booking.getTotalPrice())
                 .bookingStatus(booking.getBookingStatus())
                 .idempotencyKey(booking.getIdempotencyKey())
