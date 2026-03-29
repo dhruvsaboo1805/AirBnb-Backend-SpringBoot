@@ -23,6 +23,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final AuthServiceClient authServiceClient;
 
+    // ✅ skip filter for public endpoints
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/actuator/");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -30,14 +37,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // ─── No token ────────────────────────────────────────────────────────
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("[JwtAuthFilter] No Bearer token - {} {}", request.getMethod(), request.getRequestURI());
             sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Authorization header is missing");
             return;
         }
 
-        // ─── Validate via auth microservice ──────────────────────────────────
         try {
             AuthServiceClient.UserDetailsDTO userDetails = authServiceClient.validate(authHeader);
 
@@ -60,7 +65,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
@@ -69,7 +73,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
     }
 
-    // ─── Helper ──────────────────────────────────────────────────────────────
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json");

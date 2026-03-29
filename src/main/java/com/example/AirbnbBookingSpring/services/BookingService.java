@@ -3,6 +3,7 @@ package com.example.AirbnbBookingSpring.services;
 import com.example.AirbnbBookingSpring.dtos.BookingRequestDTO;
 import com.example.AirbnbBookingSpring.dtos.UpdateBookingRequestDTO;
 import com.example.AirbnbBookingSpring.exceptions.BookingException;
+import com.example.AirbnbBookingSpring.metrics.BookingMetrics;
 import com.example.AirbnbBookingSpring.models.Airbnb;
 import com.example.AirbnbBookingSpring.models.Availability;
 import com.example.AirbnbBookingSpring.models.Booking;
@@ -35,6 +36,7 @@ public class BookingService implements IBookingService {
     private final RedisWriteRepository redisWriteRepository;
     private final IdempotencyService idempotencyService;
     private final AvailabilityWriteRepository availabilityWriteRepository;
+    private final BookingMetrics bookingMetrics;
 
     @Override
     @Transactional
@@ -45,50 +47,73 @@ public class BookingService implements IBookingService {
                 createBookingRequest.getCheckInDate(),
                 createBookingRequest.getCheckOutDate());
 
-        Airbnb airbnb = airbnbWriteRepository.findById(createBookingRequest.getAirbnbId())
-                .orElseThrow(() -> new RuntimeException("Airbnb not found: " + createBookingRequest.getAirbnbId()));
+        return bookingMetrics.getBookingCreationTimer().record(() -> {
+            try {
+                Airbnb airbnb = airbnbWriteRepository.findById(createBookingRequest.getAirbnbId())
+                        .orElseThrow(() -> new RuntimeException("Airbnb not found: " + createBookingRequest.getAirbnbId()));
 
-        if (createBookingRequest.getCheckInDate().isAfter(createBookingRequest.getCheckOutDate())) {
-            throw new BookingException("Check-in date must be before check-out date");
-        }
-        if (createBookingRequest.getCheckInDate().isBefore(LocalDate.now())) {
-            throw new BookingException("Check-in date must be today or in the future");
-        }
+                if (createBookingRequest.getCheckInDate().isAfter(createBookingRequest.getCheckOutDate())) {
+                    bookingMetrics.incrementBookingFailed();
+                    throw new BookingException("Check-in date must be before check-out date");
+                }
 
-        List<Availability> availabilityList = concurrencyControlStrategy.lockAndCheckAvailability(
-                createBookingRequest.getAirbnbId(),
-                createBookingRequest.getCheckInDate(),
-                createBookingRequest.getCheckOutDate(),
-                createBookingRequest.getEmail()
-        );
+                if (createBookingRequest.getCheckInDate().isBefore(LocalDate.now())) {
+                    bookingMetrics.incrementBookingFailed();
+                    throw new BookingException("Check-in date must be today or in the future");
+                }
 
-        long nights = ChronoUnit.DAYS.between(createBookingRequest.getCheckInDate(), createBookingRequest.getCheckOutDate());
-        BigDecimal totalPrice = airbnb.getPricePerNight().multiply(BigDecimal.valueOf(nights));
-        String idempotencyKey = UUID.randomUUID().toString();
+                try {
+                    List<Availability> availabilityList = concurrencyControlStrategy.lockAndCheckAvailability(
+                            createBookingRequest.getAirbnbId(),
+                            createBookingRequest.getCheckInDate(),
+                            createBookingRequest.getCheckOutDate(),
+                            createBookingRequest.getEmail()
+                    );
+                } catch (BookingException e) {
+                    bookingMetrics.incrementBookingFailed();
+                    bookingMetrics.incrementDoubleBookingAttempt();
+                    throw e;
+                }
 
-        Booking booking = Booking.builder()
-                .airbnb(airbnb)
-                .customerEmail(createBookingRequest.getEmail())
-                .totalPrice(totalPrice)
-                .idempotencyKey(idempotencyKey)
-                .bookingStatus(Booking.BookingStatus.PENDING)
-                .checkInDate(createBookingRequest.getCheckInDate())
-                .checkOutDate(createBookingRequest.getCheckOutDate())
-                .build();
+                long nights = ChronoUnit.DAYS.between(createBookingRequest.getCheckInDate(), createBookingRequest.getCheckOutDate());
+                BigDecimal totalPrice = airbnb.getPricePerNight().multiply(BigDecimal.valueOf(nights));
+                String idempotencyKey = UUID.randomUUID().toString();
 
-        booking = bookingWriteRepository.save(booking);
-        log.info("[createBooking] Booking saved - bookingId={}", booking.getId());
+                Booking booking = Booking.builder()
+                        .airbnb(airbnb)
+                        .customerEmail(createBookingRequest.getEmail())
+                        .totalPrice(totalPrice)
+                        .idempotencyKey(idempotencyKey)
+                        .bookingStatus(Booking.BookingStatus.PENDING)
+                        .checkInDate(createBookingRequest.getCheckInDate())
+                        .checkOutDate(createBookingRequest.getCheckOutDate())
+                        .build();
 
-        availabilityWriteRepository.updateBookingIdByAirbnbIdAndDateBetween(
-                booking.getId(),
-                createBookingRequest.getAirbnbId(),
-                createBookingRequest.getCheckInDate(),
-                createBookingRequest.getCheckOutDate()
-        );
+                booking = bookingWriteRepository.save(booking);
+                log.info("[createBooking] Booking saved - bookingId={}", booking.getId());
 
-        redisWriteRepository.writeBookingReadModel(booking);
-        log.info("[createBooking] END - bookingId={}", booking.getId());
-        return booking;
+                availabilityWriteRepository.updateBookingIdByAirbnbIdAndDateBetween(
+                        booking.getId(),
+                        createBookingRequest.getAirbnbId(),
+                        createBookingRequest.getCheckInDate(),
+                        createBookingRequest.getCheckOutDate()
+                );
+
+                redisWriteRepository.writeBookingReadModel(booking);
+
+                bookingMetrics.incrementBookingCreated();
+                bookingMetrics.incrementPendingBookings();
+
+                log.info("[createBooking] END - bookingId={}", booking.getId());
+                return booking;
+
+            } catch (BookingException | IllegalStateException e) {
+                throw e; // already counted above
+            } catch (Exception e) {
+                bookingMetrics.incrementBookingFailed();
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Override
@@ -117,8 +142,13 @@ public class BookingService implements IBookingService {
 
         if (updateBookingRequest.getBookingStatus() == Booking.BookingStatus.CONFIRMED) {
             sagaEventPublisher.publishEvent("BOOKING_CONFIRM_REQUESTED", "CONFIRM_BOOKING", payload);
+            bookingMetrics.incrementBookingConfirmed();
+            bookingMetrics.decrementPendingBookings();
+
         } else if (updateBookingRequest.getBookingStatus() == Booking.BookingStatus.CANCELLED) {
             sagaEventPublisher.publishEvent("BOOKING_CANCEL_REQUESTED", "CANCEL_BOOKING", payload);
+            bookingMetrics.incrementBookingCancelled();
+            bookingMetrics.decrementPendingBookings();
         }
 
         log.info("[updateBooking] END - bookingId={} status={}", booking.getId(), booking.getBookingStatus());

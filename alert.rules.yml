@@ -1,0 +1,43 @@
+groups:
+  - name: airbnb-alerts
+    rules:
+
+      # Alert if error rate > 5%
+      - alert: HighBookingFailureRate
+        expr: rate(booking_failed_total[5m]) / rate(booking_created_total[5m]) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High booking failure rate"
+          description: "Booking failure rate is {{ $value }}%"
+
+      # Alert if API response time > 2 seconds
+      - alert: SlowAPIResponse
+        expr: rate(http_server_requests_seconds_sum[5m]) / rate(http_server_requests_seconds_count[5m]) > 2
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Slow API response time"
+          description: "Average response time is {{ $value }}s"
+
+      # Alert if JVM heap > 80%
+      - alert: HighJVMHeapUsage
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High JVM heap usage"
+          description: "JVM heap usage is {{ $value }}%"
+
+      # Alert if DB connections running low
+      - alert: DBConnectionPoolExhausted
+        expr: hikaricp_connections_pending > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DB connection pool almost exhausted"
+          description: "{{ $value }} connections pending"
