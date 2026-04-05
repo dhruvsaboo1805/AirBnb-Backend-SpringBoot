@@ -1,4 +1,4 @@
-package com.example.AirbnbBookingSpring.services;
+package com.example.AirbnbBookingSpring.rateLimiter;
 
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;

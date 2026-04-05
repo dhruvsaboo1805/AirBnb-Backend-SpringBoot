@@ -1,6 +1,6 @@
 package com.example.AirbnbBookingSpring.security;
 
-import com.example.AirbnbBookingSpring.services.RateLimiterFilter;
+import com.example.AirbnbBookingSpring.rateLimiter.RateLimiterFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
