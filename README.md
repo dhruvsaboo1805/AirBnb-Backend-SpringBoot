@@ -1,6 +1,6 @@
 # 🏠 Airbnb Booking System — Backend
 
-A production-grade Airbnb-style booking backend built with **Spring Boot**, featuring microservice architecture, CQRS pattern, distributed locking, saga pattern, observability, and CI/CD pipeline.
+A production-grade Airbnb-style booking backend built with **Spring Boot**, featuring microservice architecture, CQRS pattern, distributed locking, saga pattern, rate limiting, observability, and CI/CD pipeline.
 
 ---
 
@@ -8,11 +8,11 @@ A production-grade Airbnb-style booking backend built with **Spring Boot**, feat
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Client (Postman)                      │
+│                        Client (Postman / Frontend)           │
 └──────────────────────────┬──────────────────────────────────┘
                            │
               ┌────────────▼────────────┐
-              │    Auth Microservice     │  ← Docker
+              │    Auth Microservice     │  ← Docker (port 8080)
               │  Spring Boot + MySQL     │
               │  JWT + 2FA (Google Auth) │
               └────────────┬────────────┘
@@ -21,6 +21,7 @@ A production-grade Airbnb-style booking backend built with **Spring Boot**, feat
               │   Airbnb Booking Service │  ← Local (port 3000)
               │     Spring Boot          │
               │  MySQL + Redis + Saga    │
+              │  Rate Limiting + Metrics │
               └────────────┬────────────┘
                            │
          ┌─────────────────┼─────────────────┐
@@ -45,17 +46,37 @@ A production-grade Airbnb-style booking backend built with **Spring Boot**, feat
 
 ### 🏠 Listing Management
 - ADMIN can create, update, delete listings
-- Owner auto-provisioned from JWT email on first listing
+- Owner auto-provisioned from JWT email on first listing creation
 - Automatic **availability seeding** for 365 days on listing creation
 - Role-based access control via Spring Security
 
 ### 📅 Booking System
-- **Idempotency** — duplicate booking requests safely handled via idempotency keys
+- **Idempotency** — duplicate booking requests safely handled via UUID idempotency keys
 - **Distributed locking** via Redis TTL locks — prevents concurrent double bookings
 - **CQRS Pattern** — writes go to MySQL, reads served from Redis cache
 - **Saga Pattern** — booking state machine via Redis queue
   - `PENDING → CONFIRMED → availability locked`
   - `PENDING → CANCELLED → availability released`
+
+### 🔒 Rate Limiting (Token Bucket Algorithm)
+- Implemented using **Bucket4j** library
+- Different limits per endpoint type:
+
+| Endpoint | Limit | Reason |
+|----------|-------|--------|
+| `POST /api/bookings` | 5 req/min | Expensive — DB + Redis + Saga |
+| `POST /api/airbnb` | 10 req/min | Moderate — DB + seed 365 slots |
+| Everything else | 30 req/min | Cheap reads |
+
+- Per-user buckets — each user gets their own token bucket
+- ADMIN role exempt from rate limiting
+- Standard response headers:
+  ```
+  X-Rate-Limit-Limit: 30
+  X-Rate-Limit-Remaining: 24
+  X-Rate-Limit-Retry-After-Seconds: 47  ← only on 429
+  ```
+- Rate limit blocks tracked in Prometheus metrics
 
 ### 🔄 Concurrency Control
 - Redis TTL-based distributed lock per `airbnbId + dateRange`
@@ -65,14 +86,16 @@ A production-grade Airbnb-style booking backend built with **Spring Boot**, feat
 ### 📊 Observability (Prometheus + Grafana)
 - Spring Boot Actuator + Micrometer integration
 - Custom business metrics:
-  - `booking_created_total`
-  - `booking_confirmed_total`
-  - `booking_cancelled_total`
-  - `booking_failed_total`
-  - `booking_double_booking_total`
-  - `booking_pending_current` (Gauge)
-  - `booking_creation_duration` (Timer)
+  - `booking_created_total` — total bookings created
+  - `booking_confirmed_total` — total bookings confirmed
+  - `booking_cancelled_total` — total bookings cancelled
+  - `booking_failed_total` — total failed booking attempts
+  - `booking_double_booking_total` — double booking attempts blocked
+  - `booking_pending_current` — current pending bookings (Gauge)
+  - `booking_creation_duration` — booking creation time (Timer)
+  - `rate_limit_blocked_total` — requests blocked by rate limiter
 - JVM, HTTP, DB connection pool metrics out of the box
+- Alert rules for high failure rate, slow API, high JVM heap
 - Grafana dashboards for business + infrastructure monitoring
 
 ### 🚀 CI/CD
@@ -92,6 +115,7 @@ A production-grade Airbnb-style booking backend built with **Spring Boot**, feat
 | Database | MySQL 8.0 |
 | Cache / Queue | Redis 7 |
 | Auth | JWT + Google Authenticator (2FA) |
+| Rate Limiting | Bucket4j (Token Bucket Algorithm) |
 | Monitoring | Prometheus + Grafana + Micrometer |
 | Build | Gradle |
 | CI/CD | GitHub Actions |
@@ -124,6 +148,9 @@ src/main/java/com/example/AirbnbBookingSpring/
 │   ├── AuthServiceClient.java             ← calls auth microservice
 │   ├── JwtAuthFilter.java                 ← intercepts all requests
 │   └── SecurityConfig.java               ← role-based access control
+├── ratelimiter/
+│   ├── RateLimiterService.java            ← token bucket management
+│   └── RateLimiterFilter.java            ← rate limit enforcement
 ├── metrics/
 │   └── BookingMetrics.java               ← custom Prometheus metrics
 ├── models/
@@ -153,22 +180,22 @@ POST /api/v1/auth/register       → register user (role: USER/ADMIN)
 POST /api/v1/auth/login          → login → returns OTP_REQUIRED
 POST /api/v1/auth/verify-otp     → verify OTP → returns JWT
 POST /api/v1/2fa/enable          → enable 2FA, returns QR code
-GET  /api/v1/auth/validate       → validate JWT token
+GET  /api/v1/auth/validate       → validate JWT token (inter-service)
 ```
 
 ### Airbnb Service (port 3000)
 ```
-POST   /api/airbnb               → create listing (ADMIN only)
-GET    /api/airbnb               → get all listings
-GET    /api/airbnb/{id}          → get listing by id
-PUT    /api/airbnb/{id}          → update listing (ADMIN only)
-DELETE /api/airbnb/{id}          → delete listing (ADMIN only)
+POST   /api/airbnb               → create listing (ADMIN only) [10 req/min]
+GET    /api/airbnb               → get all listings             [30 req/min]
+GET    /api/airbnb/{id}          → get listing by id            [30 req/min]
+PUT    /api/airbnb/{id}          → update listing (ADMIN only)  [10 req/min]
+DELETE /api/airbnb/{id}          → delete listing (ADMIN only)  [10 req/min]
 
-POST   /api/bookings             → create booking (USER only)
-PATCH  /api/bookings             → confirm/cancel booking (USER only)
+POST   /api/bookings             → create booking (USER only)   [5 req/min]
+PATCH  /api/bookings             → confirm/cancel booking        [5 req/min]
 
-GET    /actuator/prometheus      → Prometheus metrics (public)
-GET    /actuator/health          → health check (public)
+GET    /actuator/prometheus      → Prometheus metrics (public, no rate limit)
+GET    /actuator/health          → health check (public, no rate limit)
 ```
 
 ---
@@ -176,21 +203,23 @@ GET    /actuator/health          → health check (public)
 ## 🔄 Booking Flow
 
 ```
-1. USER hits POST /api/bookings
-2. JwtAuthFilter → calls auth service /validate → extracts email
-3. Redis lock acquired for airbnbId + dateRange
-4. Availability checked → if booked → 422 error
-5. Booking saved to MySQL (PENDING)
-6. Availability slots marked with bookingId
-7. Booking written to Redis (CQRS read model)
-8. idempotencyKey returned to client
+1.  USER hits POST /api/bookings
+2.  JwtAuthFilter → calls auth service /validate → extracts email + role
+3.  RateLimiterFilter → checks token bucket → 5 req/min per user
+4.  Redis lock acquired for airbnbId + dateRange
+5.  Availability checked → if booked → 422 error
+6.  Booking saved to MySQL (PENDING)
+7.  Availability slots marked with bookingId
+8.  Booking written to Redis (CQRS read model)
+9.  idempotencyKey returned to client
+10. Prometheus counter incremented
 
-9. USER hits PATCH /api/bookings with idempotencyKey + CONFIRMED
-10. Redis read model fetched (CQRS)
-11. Status updated to CONFIRMED in MySQL + Redis
-12. Saga event published → BOOKING_CONFIRM_REQUESTED
-13. SagaEventConsumer processes → BOOKING_CONFIRMED
-14. Availability slots finalized
+11. USER hits PATCH /api/bookings with idempotencyKey + CONFIRMED
+12. Redis read model fetched (CQRS)
+13. Status updated to CONFIRMED in MySQL + Redis
+14. Saga event published → BOOKING_CONFIRM_REQUESTED
+15. SagaEventConsumer processes → BOOKING_CONFIRMED
+16. Availability slots finalized
 ```
 
 ---
@@ -213,7 +242,6 @@ cd AirBnb-Backend-SpringBoot
 ```
 
 ### 2. Set up environment variables
-Create `application.properties` or set env variables:
 ```properties
 # Database
 spring.datasource.url=jdbc:mysql://localhost:3306/airbnbbackend
@@ -231,6 +259,11 @@ AUTH_SERVICE_URL=http://localhost:8080
 SAGA_QUEUE_VALUE=saga_queue
 LOCK_KEY_PREFIX=lock:
 LOCK_TIME_OUT_DURATION=PT5M
+
+# Actuator
+management.endpoints.web.exposure.include=health,info,prometheus,metrics
+management.endpoint.prometheus.enabled=true
+management.prometheus.metrics.export.enabled=true
 ```
 
 ### 3. Start Auth Microservice (Docker)
@@ -265,18 +298,56 @@ docker-compose -f docker-compose-monitoring.yml up -d
 **Import Dashboard:** ID `19004` (Spring Boot 3.x)
 
 ### Key PromQL Queries
-```
+```promql
 # Bookings per minute
 rate(booking_created_total[1m])
 
-# Booking failure rate
+# Booking failure rate %
 rate(booking_failed_total[5m]) / rate(booking_created_total[5m]) * 100
+
+# Rate limit blocks per minute
+rate(rate_limit_blocked_total[1m])
 
 # Average API response time
 rate(http_server_requests_seconds_sum[5m]) / rate(http_server_requests_seconds_count[5m])
 
 # Active DB connections
 hikaricp_connections_active
+
+# JVM Heap usage %
+jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} * 100
+```
+
+---
+
+## 🚦 Rate Limiting
+
+### Token Bucket Algorithm
+```
+Bucket capacity = N tokens
+Refill rate     = N tokens per minute
+
+Each request    → consumes 1 token
+No tokens left  → 429 Too Many Requests
+Tokens refill   → gradually over time
+```
+
+### Testing Rate Limits
+```bash
+# Test general endpoint (30 req/min limit)
+for i in {1..32}; do
+  curl -s -o /dev/null -w "Request $i: HTTP %{http_code} | Remaining: %header{x-rate-limit-remaining}\n" \
+    -X GET http://localhost:3000/api/airbnb \
+    -H "Authorization: Bearer <your_token>"
+done
+```
+
+Expected output:
+```
+Request 1:  HTTP 200 | Remaining: 29
+...
+Request 30: HTTP 200 | Remaining: 0
+Request 31: HTTP 429 | Remaining: (empty)
 ```
 
 ---
@@ -295,22 +366,20 @@ hikaricp_connections_active
 
 ## 🔁 CI/CD Pipeline
 
-GitHub Actions runs on every push to `master`:
-
 ```
 Push to master
     ↓
 Spin up MySQL + Redis in pipeline
     ↓
-Set up JDK 21
+Set up JDK 21 + Cache Gradle
     ↓
-Cache Gradle dependencies
-    ↓
-Build project
+Build project (skip tests)
     ↓
 Run tests
     ↓
 Upload test reports
+    ↓
+Print build summary
 ```
 
 ---
@@ -325,6 +394,7 @@ Upload test reports
 | Strategy Pattern | ConcurrencyControlStrategy | Swap locking strategy without changing business logic |
 | Builder Pattern | All models via Lombok @SuperBuilder | Clean object construction |
 | Idempotency | Booking creation | Prevent duplicate bookings |
+| Token Bucket | Rate limiting via Bucket4j | Smooth rate limiting with burst support |
 
 ---
 
@@ -334,6 +404,8 @@ Upload test reports
 - Role-based access: `ADMIN` for listings, `USER` for bookings
 - No JWT logic duplicated in Airbnb service — delegated to Auth service
 - Customer identity derived from JWT — never trusted from request body
+- ADMIN role exempt from rate limiting
+- Rate limiting applied per-user using email from JWT
 
 ---
 
