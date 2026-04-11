@@ -1,0 +1,38 @@
+version: '3.8'
+
+networks:
+  default:
+    external:
+      name: airbnb-network
+services:
+  app:
+    image: 18052003/airbnb-backend:latest   # OR build: .
+    container_name: airbnb-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+      - mysql
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/airbnbBackend
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      AUTH_SERVICE_URL: http://auth-service:8080
+    restart: always
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: airbnbBackend
+    ports:
+      - "3306:3306"
+    restart: always

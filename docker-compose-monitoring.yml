@@ -1,5 +1,10 @@
 services:
 
+networks:
+  default:
+    external:
+      name: airbnb-network
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
