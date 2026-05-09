@@ -37,6 +37,9 @@ public class SagaEventPublisher {
     @Value("${SAGA_QUEUE_VALUE}")
     private String SAGA_QUEUE;
 
+    @Value("${SAGA_NOTIFICATION_QUEUE_VALUE}")
+    private String SAGA_NOTIFICATION_QUEUE;
+
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -55,6 +58,9 @@ public class SagaEventPublisher {
             System.out.println("PUBLISHER: Attempting to push to queue: " + SAGA_QUEUE + " | Payload: " + eventJson);
             redisTemplate.opsForList().rightPush(SAGA_QUEUE, eventJson); // we are forcefully using redis pull method
                                                                          // here since to not over burden with kafka
+
+            System.out.println("PUBLISHER: Attempting to push to queue: " + SAGA_NOTIFICATION_QUEUE + " | Payload: " + eventJson);
+            redisTemplate.opsForList().rightPush(SAGA_NOTIFICATION_QUEUE, eventJson);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
