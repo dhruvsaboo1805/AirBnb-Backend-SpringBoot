@@ -141,8 +141,12 @@ publishing {
         mavenJava(MavenPublication) {
             artifact bootJar
 
+            groupId = 'com.example'
+            artifactId = 'airbnb-backend'
+            version = project.version
+
             pom {
-                name = project.name
+                name = "airbnb-backend"
                 description = "Airbnb Booking Service"
 
                 properties = [
