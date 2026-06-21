@@ -1,58 +1,222 @@
+//plugins {
+//	id 'java'
+//	id 'org.springframework.boot' version '3.4.3'
+//	id 'io.spring.dependency-management' version '1.1.7'
+//    id 'maven-publish'
+//    id 'jacoco'
+//}
+//
+//group = 'com.example'
+////version = '0.0.1-SNAPSHOT'
+//version = "1.0.0-build.${System.getenv('BUILD_NUMBER') ?: 'local'}-${System.getenv('GIT_COMMIT')?.take(7) ?: 'snapshot'}"
+////description = 'AirbnbBookingSpring'
+//
+//java {
+//	toolchain {
+//		languageVersion = JavaLanguageVersion.of(21)
+//	}
+//}
+//
+//configurations {
+//	compileOnly {
+//		extendsFrom annotationProcessor
+//	}
+//}
+//
+//repositories {
+//	mavenCentral()
+//}
+//
+//// What to publish
+//publishing {
+//    repositories {
+//        maven {
+//            name = "GitHubPackages"
+//            url = uri("https://maven.pkg.github.com/${System.getenv('GITHUB_REPOSITORY') ?: 'your-username/your-repo'}")
+//            credentials {
+//                username = System.getenv('GITHUB_ACTOR') ?: ''
+//                password = System.getenv('GITHUB_TOKEN') ?: ''
+//            }
+//        }
+//    }
+//    publications {
+//        mavenJava(MavenPublication) {
+//            from components.java
+//
+//            // Add build metadata to POM
+//            pom {
+//                name = project.name
+//                description = "Airbnb microservice - ${project.name}"
+//                properties = [
+//                        'build.number': "${System.getenv('BUILD_NUMBER') ?: '0'}",
+//                        'git.commit'  : "${System.getenv('GIT_COMMIT') ?: 'unknown'}",
+//                        'git.branch'  : "${System.getenv('GIT_BRANCH') ?: 'unknown'}"
+//                ]
+//            }
+//        }
+//    }
+//}
+//
+//// Code coverage
+//jacocoTestReport {
+//    dependsOn test
+//    reports {
+//        xml.required = true
+//        html.required = true
+//    }
+//}
+//
+//dependencies {
+//	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+//	implementation 'org.springframework.boot:spring-boot-starter-web'
+//	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+//	compileOnly 'org.projectlombok:lombok'
+//	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+//	runtimeOnly 'com.mysql:mysql-connector-j'
+//	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+//	annotationProcessor 'org.projectlombok:lombok'
+//	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+//	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+//    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+//    implementation 'org.flywaydb:flyway-core'
+//    implementation 'org.flywaydb:flyway-mysql:11.9.1'
+//    implementation 'org.springframework.boot:spring-boot-starter-validation'
+//    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+//    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+//    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+//    implementation 'org.springframework.boot:spring-boot-starter-security'
+//    // Actuator — exposes /actuator/prometheus endpoint
+//    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+//
+//// Micrometer — bridges Spring metrics to Prometheus format
+//    implementation 'io.micrometer:micrometer-registry-prometheus'
+//    implementation 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.6.0'
+//    implementation 'com.github.vladimir-bukhtoyarov:bucket4j-redis:7.6.0'
+//
+//}
+//
+//tasks.named('test') {
+//    finalizedBy jacocoTestReport
+//	useJUnitPlatform()
+//}
+
+
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.4.3'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '3.4.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'maven-publish'
+    id 'jacoco'
 }
 
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
-description = 'AirbnbBookingSpring'
+version = "1.0.0-build.${System.getenv('BUILD_NUMBER') ?: 'local'}-${System.getenv('GIT_COMMIT')?.take(7) ?: 'snapshot'}"
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+jar {
+    enabled = true
+}
+
+jacoco {
+    toolVersion = "0.8.12"
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact bootJar
+
+            pom {
+                name = project.name
+                description = "Airbnb Booking Service"
+
+                properties = [
+                        'build.number': "${System.getenv('BUILD_NUMBER') ?: '0'}",
+                        'git.commit'  : "${System.getenv('GIT_COMMIT') ?: 'unknown'}",
+                        'git.branch'  : "${System.getenv('GIT_BRANCH') ?: 'unknown'}"
+                ]
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/${System.getenv('GITHUB_REPOSITORY') ?: 'dhruvsaboo1805/AirBnb-Backend-SpringBoot'}")
+
+            credentials {
+                username = System.getenv('GITHUB_ACTOR') ?: ''
+                password = System.getenv('GITHUB_TOKEN') ?: ''
+            }
+        }
+    }
+
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
     implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql:11.9.1'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    // Actuator — exposes /actuator/prometheus endpoint
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-// Micrometer — bridges Spring metrics to Prometheus format
-    implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.6.0'
     implementation 'com.github.vladimir-bukhtoyarov:bucket4j-redis:7.6.0'
+
+    compileOnly 'org.projectlombok:lombok'
+
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+
 }
