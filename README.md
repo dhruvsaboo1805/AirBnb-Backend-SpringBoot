@@ -58,6 +58,56 @@ A production-grade Airbnb-style booking backend built with **Spring Boot**, feat
   - `PENDING → CONFIRMED → availability locked`
   - `PENDING → CANCELLED → availability released`
 
+### 🔔 Notification Microservice
+A dedicated event-driven notification microservice built using Spring Boot + Redis + AWS SNS.
+
+#### Features
+- Consumes booking saga events asynchronously
+- Sends booking confirmation emails
+- Sends cancellation/refund notifications
+- AWS SNS integration
+- Dockerized and deployed on AWS EC2
+- Fully decoupled from core booking logic
+
+#### Supported Events
+| Event | Action |
+|-------|--------|
+| `BOOKING_CONFIRMED` | Sends booking success email |
+| `BOOKING_CANCELLED` | Sends refund/cancellation email |
+
+#### Notification Flow
+
+```text
+Booking Service
+      ↓
+Saga Event Publisher
+      ↓
+
+┌──────────────────────────────┐
+│ Redis Event Queues           │
+│                              │
+│ saga:events                  │
+│ notification:events          │
+└──────────────────────────────┘
+
+      ↓                         ↓
+
+Saga Consumer          Notification Service
+                              ↓
+                         AWS SNS
+                              ↓
+                      Email Notifications
+```
+
+#### Why Separate Queue?
+Initially both Saga Consumer and Notification Service consumed from the same Redis queue, causing a competing consumer problem.
+
+To solve this:
+- `saga:events` → internal saga orchestration
+- `notification:events` → notification delivery
+
+This simulates a fan-out event architecture similar to Kafka consumer groups.
+
 ### 🔒 Rate Limiting (Token Bucket Algorithm)
 - Implemented using **Bucket4j** library
 - Different limits per endpoint type:
@@ -120,6 +170,9 @@ A production-grade Airbnb-style booking backend built with **Spring Boot**, feat
 | Build | Gradle |
 | CI/CD | GitHub Actions |
 | Containerization | Docker + Docker Compose |
+| Cloud | AWS EC2 + SNS |
+| Messaging | Redis Queue |
+| Notification | AWS SNS |
 
 ---
 
@@ -350,6 +403,71 @@ Request 30: HTTP 200 | Remaining: 0
 Request 31: HTTP 429 | Remaining: (empty)
 ```
 
+## ☁️ AWS Deployment
+
+The complete system is deployed on AWS EC2 using Docker containers.
+
+### Infrastructure
+| Service | Deployment |
+|---------|-----------|
+| Airbnb Booking Service | Docker Container |
+| Auth Microservice | Docker Container |
+| Notification Service | Docker Container |
+| MySQL | Docker Container |
+| Redis | Docker Container |
+| Prometheus | Docker Container |
+| Grafana | Docker Container |
+
+### AWS Services Used
+- EC2
+- EBS
+- SNS
+- IAM
+- DockerHub
+
+### EC2 Deployment Flow
+
+```text
+Local Development
+      ↓
+Docker Buildx (linux/amd64)
+      ↓
+DockerHub Push
+      ↓
+EC2 Pull
+      ↓
+Docker Compose Deployment
+```
+
+### Docker Multi-Architecture Build
+
+MacBook ARM architecture caused compatibility issues with EC2 (`linux/amd64`).
+
+Resolved using Docker Buildx:
+
+```bash
+docker buildx build \
+--platform linux/amd64 \
+-t 18052003/notification-service:1.0 \
+--push .
+```
+
+### AWS SNS Integration
+- SNS Topic created for booking notifications
+- Email subscriptions configured
+- Notification Service publishes events asynchronously
+- AWS CLI configured on EC2 for authentication
+
+### Docker Networking
+All microservices communicate over a shared Docker bridge network:
+
+```yaml
+networks:
+  default:
+    external:
+      name: airbnb-network
+```
+
 ---
 
 ## 🧪 Testing
@@ -408,6 +526,30 @@ Print build summary
 - Rate limiting applied per-user using email from JWT
 
 ---
+
+## 🚀 Production Challenges Solved
+
+### Docker Multi-Architecture Compatibility
+- MacBook ARM images failed on EC2 AMD64
+- Resolved using Docker Buildx multi-platform builds
+
+### Competing Consumer Problem
+- Both Saga Consumer and Notification Service initially consumed same Redis queue
+- Solved using separate Redis queues
+
+### Storage Constraints
+- Docker layers exhausted EC2 disk storage
+- Resolved by resizing EBS volume
+
+### Environment Configuration
+- Separate configs for local, Docker, and EC2 environments
+- Redis host handling:
+  - `localhost` for local development
+  - `redis` for Docker networking
+
+### Stateful Container Persistence
+- Faced MySQL volume lifecycle issues during Docker cleanup
+- Resolved using persistent Docker volumes and shared database strategy
 
 ## 📝 Author
 
