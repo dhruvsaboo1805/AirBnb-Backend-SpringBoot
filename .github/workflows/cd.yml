@@ -1,0 +1,74 @@
+  ```yaml
+  name: CD Pipeline
+
+  on:
+    workflow_run:
+      workflows: ["CI Pipeline"]
+      types:
+        - completed
+
+  jobs:
+
+    deploy:
+
+      if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+      runs-on: ubuntu-latest
+
+      permissions:
+        id-token: write
+        contents: read
+
+      steps:
+
+        - name: Checkout Code
+          uses: actions/checkout@v4
+
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: eu-north-1
+
+        - name: Login to Amazon ECR
+          id: login-ecr
+          uses: aws-actions/amazon-ecr-login@v2
+
+        - name: Build Docker Image
+          run: |
+            docker build \
+              -t airbnb-backend:${{ github.sha }} .
+
+        - name: Tag Docker Image
+          run: |
+            docker tag airbnb-backend:${{ github.sha }} \
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-north-1.amazonaws.com/airbnb-backend:latest
+
+        - name: Push Docker Image
+          run: |
+            docker push \
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-north-1.amazonaws.com/airbnb-backend:latest
+
+        - name: Deploy to EC2
+          uses: appleboy/ssh-action@v1.0.3
+          with:
+            host: ${{ secrets.EC2_HOST }}
+            username: ubuntu
+            key: ${{ secrets.EC2_SSH_KEY }}
+
+            script: |
+              aws ecr get-login-password \
+              --region eu-north-1 | \
+              docker login \
+              --username AWS \
+              --password-stdin \
+              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-north-1.amazonaws.com
+              
+              cd ~/AirBnb-Backend-SpringBoot
+              
+              docker compose -f docker-compose.prod.yml pull
+              
+              docker compose -f docker-compose.prod.yml up -d --remove-orphans
+              
+              docker image prune -af
