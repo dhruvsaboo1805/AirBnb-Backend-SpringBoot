@@ -17,8 +17,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class IdempotencyService implements IIdempotencyService {
-    
-    //DI
+
+    //DI in java
     private final RedisReadRepository redisReadRepository;
     private final BookingWriteRepository bookingWriteRepository;
     private final AirbnbWriteRepository airbnbWriteRepository;
