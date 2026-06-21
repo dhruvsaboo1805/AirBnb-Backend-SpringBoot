@@ -49,7 +49,7 @@ public class RateLimiterFilter extends OncePerRequestFilter {
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
         if (probe.isConsumed()) {
-            // add remaining tokens to response header
+            // add remaining tokens to response headers
             response.addHeader("X-Rate-Limit-Remaining",
                     String.valueOf(probe.getRemainingTokens()));
             log.debug("[RateLimiter] allowed - email={}, path={}, remaining={}",
